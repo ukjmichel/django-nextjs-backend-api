@@ -7,7 +7,7 @@ from ninja_jwt.controller import NinjaJWTDefaultController
 # Initialize the NinjaExtraAPI and register JWT controller
 api = NinjaExtraAPI()
 api.register_controllers(NinjaJWTDefaultController)
-api.add_router("/waitlist/", "waitlists.api.router")
+api.add_router("/waitlists/", "waitlists.api.router")
 
 
 class UserSchema(Schema):
@@ -19,7 +19,7 @@ class UserSchema(Schema):
 @api.get("/hello")
 def hello(request):
     print(request)
-    return "Hello World"
+    return {"message": "Hello World"}
 
 
 @api.get("/me", response=UserSchema, auth=JWTAuth())

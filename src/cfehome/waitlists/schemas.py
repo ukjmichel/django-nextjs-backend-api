@@ -1,12 +1,12 @@
 from ninja import Schema
 from typing import Optional
 from datetime import datetime
-
+from pydantic import BaseModel
 from pydantic import EmailStr
 
 
-class WaitlistCreateSchema(Schema):
-    id: int
+class WaitlistEntryCreateSchema(BaseModel):
+    id: str
     email: EmailStr
 
 
