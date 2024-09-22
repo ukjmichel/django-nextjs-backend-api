@@ -8,6 +8,7 @@ from ninja_jwt.controller import NinjaJWTDefaultController
 api = NinjaExtraAPI()
 api.register_controllers(NinjaJWTDefaultController)
 api.add_router("/waitlists/", "waitlists.api.router")
+api.add_router("/movies/", "movies.api.router")
 
 
 class UserSchema(Schema):

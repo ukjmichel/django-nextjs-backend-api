@@ -1,8 +1,6 @@
-from ninja import Schema
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
-from pydantic import EmailStr
+from pydantic import BaseModel, EmailStr
 
 
 class WaitlistEntryCreateSchema(BaseModel):
@@ -10,14 +8,18 @@ class WaitlistEntryCreateSchema(BaseModel):
     email: EmailStr
 
 
-class WaitlistEntryListSchema(Schema):
+class WaitlistEntryUpdateSchema(BaseModel):
+    email: Optional[EmailStr]  # Email is optional for updates
+
+
+class WaitlistEntryListSchema(BaseModel):
     id: int
     email: EmailStr
     updated: datetime
     timestamp: datetime
 
 
-class WaitlistEntryDetailSchema(Schema):
+class WaitlistEntryDetailSchema(BaseModel):
     id: int
     email: EmailStr
     updated: datetime

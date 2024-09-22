@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # internal app
     "waitlists",
+    "movies"
 ]
 
 MIDDLEWARE = [
