@@ -12,7 +12,9 @@ class MovieEntry(models.Model):
     release_date = models.DateField()
     genre = models.CharField(max_length=100)
     description = models.TextField()
-    image = models.ImageField(upload_to="movie_images/")
+    image = models.ImageField(
+        upload_to="movies/images/", blank=True, null=True
+    )  # Set as optional
     trailer = models.URLField()
     movie_id = models.CharField(max_length=255, unique=True)
 
@@ -21,18 +23,7 @@ class MovieEntry(models.Model):
         managed = True
         indexes = [
             models.Index(
-                fields=[
-                    "title",
-                    "author",
-                    "casting",
-                    "director",
-                    "release_date",
-                    "genre",
-                    "description",
-                    "image",
-                    "trailer",
-                    "movie_id",
-                ]
+                fields=["title", "author", "release_date", "genre", "movie_id"]
             ),
         ]
 
@@ -49,14 +40,14 @@ class MovieEntry(models.Model):
 
 class Rating(models.Model):
     movie = models.ForeignKey(
-        "MovieEntry", related_name="ratings", on_delete=models.CASCADE
+        MovieEntry, related_name="ratings", on_delete=models.CASCADE
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    comment = models.TextField()
+    comment = models.TextField(blank=True, null=True)  # Allow comments to be optional
     score = models.FloatField()
     created_at = models.DateTimeField(
         auto_now_add=True
-    )  # This will automatically set the timestamp on creation
+    )  # Automatically set the timestamp on creation
 
     def __str__(self):
         return f"{self.user.username} rated {self.movie.title}: {self.score}"

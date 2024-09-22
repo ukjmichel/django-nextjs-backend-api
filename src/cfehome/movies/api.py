@@ -1,89 +1,73 @@
-from ninja import Router
+from typing import List, Optional
 from django.shortcuts import get_object_or_404
-from .models import MovieEntry, Rating
-from .schemas import (
-    MovieEntryDetailSchema,
-    MoviesListEntrySchema,
-    MovieUpdateSchema,
-    MovieRatingSchema,
-)
+from ninja import Router, Schema  # Ensure Schema is imported
 from ninja_jwt.authentication import JWTAuth
+from .models import MovieEntry
+from .schemas import (
+    MoviesListEntrySchema,
+    MovieEntryDetailSchema,
+    MovieUpdateSchema,
+    DeleteResponseSchema,
+)
 
 router = Router()
 
 
-@router.get("/", response=list[MoviesListEntrySchema], auth=JWTAuth())
+# List all movies
+@router.get("/", response=List[MoviesListEntrySchema], auth=JWTAuth())
 def list_movies(request):
     movies = MovieEntry.objects.all()
     return [
         MoviesListEntrySchema(
             id=movie.id,
             title=movie.title,
-            release_date=movie.release_date,
+            release_date=movie.release_date.isoformat(),  # Format date
             genre=movie.genre,
-            average_rating=movie.average_rating(),  # Assuming you have a method to calculate average rating
+            average_rating=movie.average_rating(),  # Assuming this method exists
+            movie_id=movie.id,
         )
         for movie in movies
     ]
 
 
-@router.post("/", response=MovieEntryDetailSchema, auth=JWTAuth())
-def add_movie(request, payload: MovieEntryDetailSchema):
-    movie = MovieEntry.objects.create(**payload.dict())
-    return movie
-
-
-@router.get("/{movie_id}", response=MovieEntryDetailSchema)
+# Get movie detail by ID
+@router.get("/{movie_id}", response=MovieEntryDetailSchema, auth=JWTAuth())
 def get_movie(request, movie_id: int):
     movie = get_object_or_404(MovieEntry, id=movie_id)
-    return movie
+    return MovieEntryDetailSchema.from_orm(movie)
 
 
-@router.put("/{movie_id}", response=MovieEntryDetailSchema, auth=JWTAuth())
-def update_movie(request, movie_id: int, payload: MovieUpdateSchema):
-    movie = get_object_or_404(MovieEntry, id=movie_id)
-    for attr, value in payload.dict().items():
-        if value is not None:
-            setattr(movie, attr, value)
+# Create a new movie
+@router.post("/", response=MovieEntryDetailSchema, auth=JWTAuth())
+def create_movie(request, data: MovieUpdateSchema):
+    movie = MovieEntry(**data.dict())
     movie.save()
     return movie
 
 
-@router.delete("/{movie_id}", response={204: None}, auth=JWTAuth())
+# Update an existing movie by ID
+@router.put("/{movie_id}", response=MovieEntryDetailSchema, auth=JWTAuth())
+def update_movie(request, movie_id: int, data: MovieUpdateSchema):
+    movie = get_object_or_404(MovieEntry, id=movie_id)
+    for attr, value in data.dict(exclude_unset=True).items():
+        setattr(movie, attr, value)
+    movie.save()
+    return movie
+
+
+# Delete a movie by ID
+@router.delete("/{movie_id}", response=DeleteResponseSchema, auth=JWTAuth())
 def delete_movie(request, movie_id: int):
     movie = get_object_or_404(MovieEntry, id=movie_id)
     movie.delete()
-    return 204  # No content
-
-
-@router.post("/{movie_id}/rate", response=MovieRatingSchema, auth=JWTAuth())
-def add_rating(request, movie_id: int, payload: MovieRatingSchema):
-    movie = get_object_or_404(MovieEntry, id=movie_id)
-
-    # Create a new rating entry in the database
-    rating = Rating.objects.create(
-        movie=movie,
-        user=request.user,  # Assuming the user is authenticated
-        comment=payload.comment,
-        score=payload.score,
-    )
-
     return {
-        "username": request.user.username,
-        "comment": rating.comment,
-        "score": rating.score,
-    }
+        "status": "success",
+        "message": "Movie deleted successfully.",
+    }  # Return a dict for DeleteResponseSchema
 
 
-@router.get("/movies/{movie_id}/ratings", response=list[MovieRatingSchema])
-def get_ratings(request, movie_id: int):
-    movie = get_object_or_404(MovieEntry, id=movie_id)
-    ratings = (
-        movie.ratings.all()
-    )  # Assuming you have a related name set up in your Rating model
-    return [
-        MovieRatingSchema(
-            username=rating.user.username, comment=rating.comment, score=rating.score
-        )
-        for rating in ratings
-    ]
+# Movie Rating Schema
+class MovieRatingSchema(Schema):
+    username: str
+    comment: Optional[str] = None
+    score: float
